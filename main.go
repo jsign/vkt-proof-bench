@@ -15,11 +15,10 @@ import (
 )
 
 const (
-	vectorSize    = 256
-	numMilestones = 5
+	vectorSize = 256
 )
 
-var milestoneName = []string{
+var provingMilestonesName = []string{
 	"Generate challenge r and powers ",
 	"Calculate g(x) and D            ",
 	"Calculate h(x) and E            ",
@@ -34,6 +33,7 @@ func main() {
 func benchProving() {
 	conf := genOrLoadConfig("precomp")
 
+	numMilestones := len(provingMilestonesName)
 	numberOfPolys := []int{1, 250, 500, 1_000, 2_000, 4_000, 10_000}
 	numRounds := 5
 
@@ -60,7 +60,7 @@ func benchProving() {
 		fmt.Printf("\tAvg. total running time: %dms\n", (aggrTotalTime / time.Duration(numRounds)).Milliseconds())
 		fmt.Printf("\tAvg. time per milestone:\n")
 		for i := 0; i < numMilestones; i++ {
-			fmt.Printf("\t\t%s: %dus\n", milestoneName[i], (aggrMilestoneDuration[i] / time.Duration(numRounds)).Microseconds())
+			fmt.Printf("\t\t%s: %dus\n", provingMilestonesName[i], (aggrMilestoneDuration[i] / time.Duration(numRounds)).Microseconds())
 		}
 		fmt.Println()
 	}
