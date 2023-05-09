@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/crate-crypto/go-ipa"
@@ -12,6 +14,7 @@ import (
 	"github.com/crate-crypto/go-ipa/banderwagon"
 	"github.com/crate-crypto/go-ipa/common"
 	"github.com/crate-crypto/go-ipa/ipa"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -27,6 +30,7 @@ var provingMilestonesName = []string{
 }
 
 func main() {
+	fmt.Printf("### Proving ###\n")
 	benchProving()
 }
 
@@ -35,7 +39,7 @@ func benchProving() {
 
 	numMilestones := len(provingMilestonesName)
 	numberOfPolys := []int{1, 250, 500, 1_000, 2_000, 4_000, 10_000}
-	numRounds := 5
+	numRounds := 10
 
 	for _, n := range numberOfPolys {
 		var aggrTotalTime time.Duration
@@ -67,19 +71,36 @@ func benchProving() {
 }
 
 func generateNRandomPolysEvals(conf *ipa.IPAConfig, n int) ([]*banderwagon.Element, [][]fr.Element, []uint8) {
-	retCs := make([]*banderwagon.Element, n)
-	retFrs := make([][]fr.Element, n)
-	retZs := make([]uint8, n)
+	var lock sync.Mutex
+	retCs := make([]*banderwagon.Element, 0, n)
+	retFrs := make([][]fr.Element, 0, n)
+	retZs := make([]uint8, 0, n)
 
-	for i := 0; i < n; i++ {
-		retFrs[i] = make([]fr.Element, vectorSize)
-		for j := 0; j < vectorSize; j++ {
-			retFrs[i][j].SetRandom()
+	batchSize := n/runtime.NumCPU() + 1
+	g, _ := errgroup.WithContext(context.Background())
+	for i := 0; i < n; i += batchSize {
+		num := batchSize
+		if i+batchSize > n {
+			num = n - i
 		}
-		c := conf.Commit(retFrs[i])
-		retCs[i] = &c
-		retZs[i] = uint8(rand.Uint32() % vectorSize)
+		g.Go(func() error {
+			for i := 0; i < num; i++ {
+				frs := make([]fr.Element, vectorSize)
+				for j := 0; j < vectorSize; j++ {
+					frs[j].SetRandom()
+				}
+				c := conf.Commit(frs)
+
+				lock.Lock()
+				retFrs = append(retFrs, frs)
+				retCs = append(retCs, &c)
+				retZs = append(retZs, uint8(rand.Uint32()%vectorSize))
+				lock.Unlock()
+			}
+			return nil
+		})
 	}
+	g.Wait()
 
 	return retCs, retFrs, retZs
 }
