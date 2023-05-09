@@ -34,8 +34,8 @@ func main() {
 func benchProving() {
 	conf := genOrLoadConfig("precomp")
 
-	numberOfPolys := []int{1, 10, 100, 1_000, 5_000}
-	numRounds := 500
+	numberOfPolys := []int{1, 250, 500, 1_000, 2_000, 4_000, 10_000}
+	numRounds := 5
 
 	for _, n := range numberOfPolys {
 		var aggrTotalTime time.Duration
@@ -57,7 +57,7 @@ func benchProving() {
 			aggrTotalTime += timestamps[len(timestamps)-1].Sub(timestamps[0])
 		}
 		fmt.Printf("For %d polynomials:\n", n)
-		fmt.Printf("\tAvg. total running time: %dus\n", (aggrTotalTime / time.Duration(numRounds)).Microseconds())
+		fmt.Printf("\tAvg. total running time: %dms\n", (aggrTotalTime / time.Duration(numRounds)).Milliseconds())
 		fmt.Printf("\tAvg. time per milestone:\n")
 		for i := 0; i < numMilestones; i++ {
 			fmt.Printf("\t\t%s: %dus\n", milestoneName[i], (aggrMilestoneDuration[i] / time.Duration(numRounds)).Microseconds())
