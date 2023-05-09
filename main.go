@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"os"
+	"runtime"
 	"time"
 
 	"github.com/crate-crypto/go-ipa"
@@ -12,23 +14,34 @@ import (
 	"github.com/crate-crypto/go-ipa/ipa"
 )
 
-const vectorSize = 256
-const numMilestones = 6
+const (
+	vectorSize    = 256
+	numMilestones = 5
+)
+
+var milestoneName = []string{
+	"Generate challenge r and powers ",
+	"Calculate g(x) and D            ",
+	"Calculate h(x) and E            ",
+	"Calculate (h-g)(x) and E-D      ",
+	"IPA for (h-g)(x) and E-D in r   ",
+}
 
 func main() {
 	benchProving()
 }
 
 func benchProving() {
-	conf := ipa.NewIPASettings()
+	conf := genOrLoadConfig("precomp")
 
-	numberOfPolys := []int{1, 10, 100, 1_000, 10_000}
-	numRounds := 10
+	numberOfPolys := []int{1, 10, 100, 1_000, 5_000}
+	numRounds := 500
 
 	for _, n := range numberOfPolys {
 		var aggrTotalTime time.Duration
 		aggrMilestoneDuration := make([]time.Duration, numMilestones)
 		for i := 0; i < numRounds; i++ {
+			runtime.GC()
 			cs, fs, zs := generateNRandomPolysEvals(conf, n)
 
 			transcript := common.NewTranscript("bench_proving")
@@ -44,10 +57,10 @@ func benchProving() {
 			aggrTotalTime += timestamps[len(timestamps)-1].Sub(timestamps[0])
 		}
 		fmt.Printf("For %d polynomials:\n", n)
-		fmt.Printf("\tAvg. total running time: %v\n", aggrTotalTime/time.Duration(numRounds))
+		fmt.Printf("\tAvg. total running time: %dus\n", (aggrTotalTime / time.Duration(numRounds)).Microseconds())
 		fmt.Printf("\tAvg. time per milestone:\n")
 		for i := 0; i < numMilestones; i++ {
-			fmt.Printf("\t\tMilestone %d: %v\n", i+1, aggrMilestoneDuration[i]/time.Duration(numRounds))
+			fmt.Printf("\t\t%s: %dus\n", milestoneName[i], (aggrMilestoneDuration[i] / time.Duration(numRounds)).Microseconds())
 		}
 		fmt.Println()
 	}
@@ -69,4 +82,21 @@ func generateNRandomPolysEvals(conf *ipa.IPAConfig, n int) ([]*banderwagon.Eleme
 	}
 
 	return retCs, retFrs, retZs
+}
+
+func genOrLoadConfig(fileName string) *ipa.IPAConfig {
+	serialized, err := os.ReadFile(fileName)
+	if err == nil {
+		srs, err := ipa.DeserializeSRSPrecomp(serialized)
+		if err != nil {
+			panic(err)
+		}
+		return ipa.NewIPASettingsWithSRSPrecomp(srs)
+	}
+	conf := ipa.NewIPASettings()
+	bts, err := conf.SRSPrecompPoints.SerializeSRSPrecomp()
+	if err == nil {
+		_ = os.WriteFile(fileName, bts, 0644)
+	}
+	return conf
 }
