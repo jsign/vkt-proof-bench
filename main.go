@@ -97,13 +97,13 @@ func bench(conf *ipa.IPAConfig) {
 		fmt.Printf("\t\tAvg. total duration: %dms\n", (provingAggrTotalTime / time.Duration(numRounds)).Milliseconds())
 		fmt.Printf("\t\tAvg. time per milestone:\n")
 		for i := 0; i < provingNumMilestones; i++ {
-			fmt.Printf("\t\t\t%s: %dus\n", provingMilestoneNames[i], (provingAggrMilestoneDuration[i] / time.Duration(numRounds)).Microseconds())
+			fmt.Printf("\t\t\t%s: %.02fms\n", provingMilestoneNames[i], float64((provingAggrMilestoneDuration[i]/time.Duration(numRounds)).Microseconds())/1000)
 		}
 		fmt.Printf("\tVerification:\n")
 		fmt.Printf("\t\tAvg. total duration: %dms\n", (verificationAggrTotalTime / time.Duration(numRounds)).Milliseconds())
 		fmt.Printf("\t\tAvg. time per milestone:\n")
 		for i := 0; i < verificationNumMilestones; i++ {
-			fmt.Printf("\t\t\t%s: %dus\n", verificationMilestoneNames[i], (verificationAggrMilestoneDuration[i] / time.Duration(numRounds)).Microseconds())
+			fmt.Printf("\t\t\t%s: %.02fms\n", verificationMilestoneNames[i], float64((verificationAggrMilestoneDuration[i]/time.Duration(numRounds)).Microseconds())/1000)
 		}
 		fmt.Println()
 	}
