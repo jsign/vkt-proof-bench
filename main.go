@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math/rand"
@@ -27,10 +28,10 @@ var numPolynomials = []int{1, 625, 1_250, 2_500, 5_000, 10_000}
 func main() {
 	conf := genOrLoadConfig("precomp")
 
-	bench(conf)
+	benchProvingAndVerification(conf)
 }
 
-func bench(conf *ipa.IPAConfig) {
+func benchProvingAndVerification(conf *ipa.IPAConfig) {
 	provingMilestoneNames := []string{
 		"Generate challenge r and powers ",
 		"Calculate t, g(x) and D         ",
@@ -49,9 +50,11 @@ func bench(conf *ipa.IPAConfig) {
 	verificationNumMilestones := len(verificationMilestoneNames)
 
 	for _, n := range numPolynomials {
+		var proofAggrSerialization time.Duration
 		var provingAggrTotalTime time.Duration
 		provingAggrMilestoneDuration := make([]time.Duration, provingNumMilestones)
 
+		var proofAggrDeserialization time.Duration
 		var verificationAggrTotalTime time.Duration
 		verificationAggrMilestoneDuration := make([]time.Duration, verificationNumMilestones)
 
@@ -90,16 +93,24 @@ func bench(conf *ipa.IPAConfig) {
 				verificationAggrMilestoneDuration[k-1] += timestamps[k].Sub(timestamps[k-1])
 			}
 			verificationAggrTotalTime += timestamps[len(timestamps)-1].Sub(timestamps[0])
-
+			var buf bytes.Buffer
+			now := time.Now()
+			proof.Write(&buf)
+			proofAggrSerialization += time.Since(now)
+			now = time.Now()
+			proof.Read(&buf)
+			proofAggrDeserialization += time.Since(now)
 		}
 		fmt.Printf("For %d polynomials:\n", n)
 		fmt.Printf("\tProving:\n")
-		fmt.Printf("\t\tAvg. total duration: %dms\n", (provingAggrTotalTime / time.Duration(numRounds)).Milliseconds())
+		fmt.Printf("\t\tAvg. proof serialization duration: %.02fms\n", float64((proofAggrSerialization/time.Duration(numRounds)).Microseconds())/1000)
+		fmt.Printf("\t\tAvg. proof creation duration: %dms\n", (provingAggrTotalTime / time.Duration(numRounds)).Milliseconds())
 		fmt.Printf("\t\tAvg. time per milestone:\n")
 		for i := 0; i < provingNumMilestones; i++ {
 			fmt.Printf("\t\t\t%s: %.02fms\n", provingMilestoneNames[i], float64((provingAggrMilestoneDuration[i]/time.Duration(numRounds)).Microseconds())/1000)
 		}
 		fmt.Printf("\tVerification:\n")
+		fmt.Printf("\t\tAvg. proof deserialization duration: %.02fms\n", float64((proofAggrSerialization/time.Duration(numRounds)).Microseconds())/1000)
 		fmt.Printf("\t\tAvg. total duration: %dms\n", (verificationAggrTotalTime / time.Duration(numRounds)).Milliseconds())
 		fmt.Printf("\t\tAvg. time per milestone:\n")
 		for i := 0; i < verificationNumMilestones; i++ {
