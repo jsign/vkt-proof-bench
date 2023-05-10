@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/crate-crypto/go-ipa"
+	multiproof "github.com/crate-crypto/go-ipa"
 	"github.com/crate-crypto/go-ipa/bandersnatch/fr"
 	"github.com/crate-crypto/go-ipa/banderwagon"
 	"github.com/crate-crypto/go-ipa/common"
@@ -19,52 +19,91 @@ import (
 
 const (
 	vectorSize = 256
+	numRounds  = 10
 )
 
-var provingMilestonesName = []string{
-	"Generate challenge r and powers ",
-	"Calculate g(x) and D            ",
-	"Calculate h(x) and E            ",
-	"Calculate (h-g)(x) and E-D      ",
-	"IPA for (h-g)(x) and E-D in r   ",
-}
+var numPolynomials = []int{1, 625, 1_250, 2_500, 5_000, 10_000}
 
 func main() {
-	fmt.Printf("### Proving ###\n")
-	benchProving()
-}
-
-func benchProving() {
 	conf := genOrLoadConfig("precomp")
 
-	numMilestones := len(provingMilestonesName)
-	numberOfPolys := []int{1, 250, 500, 1_000, 2_000, 4_000, 10_000}
-	numRounds := 10
+	bench(conf)
+}
 
-	for _, n := range numberOfPolys {
-		var aggrTotalTime time.Duration
-		aggrMilestoneDuration := make([]time.Duration, numMilestones)
+func bench(conf *ipa.IPAConfig) {
+	provingMilestoneNames := []string{
+		"Generate challenge r and powers ",
+		"Calculate t, g(x) and D         ",
+		"Calculate h(x) and E            ",
+		"Calculate (h-g)(x) and E-D      ",
+		"IPA for (h-g)(x) and E-D on t   ",
+	}
+	provingNumMilestones := len(provingMilestoneNames)
+	verificationMilestoneNames := []string{
+		"Generate challenge r and powers                       ",
+		"Calculating helper_scalars r^i/(t-z_i)                ",
+		"g_2(t) = SUM y_i*(r^i/(t-z_i))=SUM y_i*helper_scalars ",
+		"Compute E                                             ",
+		"Compute E-D and verify IPA                            ",
+	}
+	verificationNumMilestones := len(verificationMilestoneNames)
+
+	for _, n := range numPolynomials {
+		var provingAggrTotalTime time.Duration
+		provingAggrMilestoneDuration := make([]time.Duration, provingNumMilestones)
+
+		var verificationAggrTotalTime time.Duration
+		verificationAggrMilestoneDuration := make([]time.Duration, verificationNumMilestones)
+
 		for i := 0; i < numRounds; i++ {
 			runtime.GC()
+
+			// Setup.
 			cs, fs, zs := generateNRandomPolysEvals(conf, n)
 
-			transcript := common.NewTranscript("bench_proving")
-			multiproof.CreateMultiProof(transcript, conf, cs, fs, zs)
-
-			timestamps := transcript.GetTimestamps()
-			if len(timestamps) != numMilestones+1 {
+			// Proving.
+			transcriptProving := common.NewTranscript("bench")
+			proof := multiproof.CreateMultiProof(transcriptProving, conf, cs, fs, zs)
+			timestamps := transcriptProving.GetTimestamps()
+			if len(timestamps) != provingNumMilestones+1 {
 				panic("wrong number of timestamps")
 			}
 			for k := 1; k < len(timestamps); k++ {
-				aggrMilestoneDuration[k-1] += timestamps[k].Sub(timestamps[k-1])
+				provingAggrMilestoneDuration[k-1] += timestamps[k].Sub(timestamps[k-1])
 			}
-			aggrTotalTime += timestamps[len(timestamps)-1].Sub(timestamps[0])
+			provingAggrTotalTime += timestamps[len(timestamps)-1].Sub(timestamps[0])
+
+			// Verification.
+			ys := make([]*fr.Element, len(zs))
+			for i, z := range zs {
+				ys[i] = &fs[i][z]
+			}
+			transcriptVerification := common.NewTranscript("bench")
+			if ok := multiproof.CheckMultiProof(transcriptVerification, conf, proof, cs, ys, zs); !ok {
+				panic("verification failed")
+			}
+			timestamps = transcriptVerification.GetTimestamps()
+			if len(timestamps) != verificationNumMilestones+1 {
+				panic("wrong number of timestamps")
+			}
+			for k := 1; k < len(timestamps); k++ {
+				verificationAggrMilestoneDuration[k-1] += timestamps[k].Sub(timestamps[k-1])
+			}
+			verificationAggrTotalTime += timestamps[len(timestamps)-1].Sub(timestamps[0])
+
 		}
 		fmt.Printf("For %d polynomials:\n", n)
-		fmt.Printf("\tAvg. total running time: %dms\n", (aggrTotalTime / time.Duration(numRounds)).Milliseconds())
-		fmt.Printf("\tAvg. time per milestone:\n")
-		for i := 0; i < numMilestones; i++ {
-			fmt.Printf("\t\t%s: %dus\n", provingMilestonesName[i], (aggrMilestoneDuration[i] / time.Duration(numRounds)).Microseconds())
+		fmt.Printf("\tProving:\n")
+		fmt.Printf("\t\tAvg. total duration: %dms\n", (provingAggrTotalTime / time.Duration(numRounds)).Milliseconds())
+		fmt.Printf("\t\tAvg. time per milestone:\n")
+		for i := 0; i < provingNumMilestones; i++ {
+			fmt.Printf("\t\t\t%s: %dus\n", provingMilestoneNames[i], (provingAggrMilestoneDuration[i] / time.Duration(numRounds)).Microseconds())
+		}
+		fmt.Printf("\tVerification:\n")
+		fmt.Printf("\t\tAvg. total duration: %dms\n", (verificationAggrTotalTime / time.Duration(numRounds)).Milliseconds())
+		fmt.Printf("\t\tAvg. time per milestone:\n")
+		for i := 0; i < verificationNumMilestones; i++ {
+			fmt.Printf("\t\t\t%s: %dus\n", verificationMilestoneNames[i], (verificationAggrMilestoneDuration[i] / time.Duration(numRounds)).Microseconds())
 		}
 		fmt.Println()
 	}
@@ -73,7 +112,7 @@ func benchProving() {
 func generateNRandomPolysEvals(conf *ipa.IPAConfig, n int) ([]*banderwagon.Element, [][]fr.Element, []uint8) {
 	var lock sync.Mutex
 	retCs := make([]*banderwagon.Element, 0, n)
-	retFrs := make([][]fr.Element, 0, n)
+	retEvals := make([][]fr.Element, 0, n)
 	retZs := make([]uint8, 0, n)
 
 	batchSize := n/runtime.NumCPU() + 1
@@ -92,7 +131,7 @@ func generateNRandomPolysEvals(conf *ipa.IPAConfig, n int) ([]*banderwagon.Eleme
 				c := conf.Commit(frs)
 
 				lock.Lock()
-				retFrs = append(retFrs, frs)
+				retEvals = append(retEvals, frs)
 				retCs = append(retCs, &c)
 				retZs = append(retZs, uint8(rand.Uint32()%vectorSize))
 				lock.Unlock()
@@ -102,7 +141,7 @@ func generateNRandomPolysEvals(conf *ipa.IPAConfig, n int) ([]*banderwagon.Eleme
 	}
 	g.Wait()
 
-	return retCs, retFrs, retZs
+	return retCs, retEvals, retZs
 }
 
 func genOrLoadConfig(fileName string) *ipa.IPAConfig {
