@@ -15,6 +15,7 @@ import (
 	"github.com/crate-crypto/go-ipa/banderwagon"
 	"github.com/crate-crypto/go-ipa/common"
 	"github.com/crate-crypto/go-ipa/ipa"
+	"github.com/gballet/go-verkle"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -23,12 +24,14 @@ const (
 	numRounds  = 10
 )
 
-var numPolynomials = []int{1, 625, 1_250, 2_500, 5_000, 10_000}
-
 func main() {
 	conf := genOrLoadConfig("precomp")
 
-	benchProvingAndVerification(conf)
+	// fmt.Printf("*** Multiproof benchmark ***\n")
+	// benchProvingAndVerification(conf)
+
+	fmt.Printf("*** VKT proof benchmark ***\n")
+	benchVKTProof(conf)
 }
 
 func benchProvingAndVerification(conf *ipa.IPAConfig) {
@@ -49,7 +52,7 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 	}
 	verificationNumMilestones := len(verificationMilestoneNames)
 
-	for _, n := range numPolynomials {
+	for _, numPolynomials := range []int{1, 1000, 2000, 4000, 8000, 16000} {
 		var proofAggrSerialization time.Duration
 		var provingAggrTotalTime time.Duration
 		provingAggrMilestoneDuration := make([]time.Duration, provingNumMilestones)
@@ -62,7 +65,7 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 			runtime.GC()
 
 			// Setup.
-			cs, fs, zs := generateNRandomPolysEvals(conf, n)
+			cs, fs, zs := generateNRandomPolysEvals(conf, numPolynomials)
 
 			// Proving.
 			transcriptProving := common.NewTranscript("bench")
@@ -101,7 +104,7 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 			proof.Read(&buf)
 			proofAggrDeserialization += time.Since(now)
 		}
-		fmt.Printf("For %d polynomials:\n", n)
+		fmt.Printf("For %d polynomials:\n", numPolynomials)
 		fmt.Printf("\tProving:\n")
 		fmt.Printf("\t\tAvg. proof serialization duration: %.02fms\n", float64((proofAggrSerialization/time.Duration(numRounds)).Microseconds())/1000)
 		fmt.Printf("\t\tAvg. proof creation duration: %dms\n", (provingAggrTotalTime / time.Duration(numRounds)).Milliseconds())
@@ -118,6 +121,70 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 		}
 		fmt.Println()
 	}
+}
+
+func benchVKTProof(conf *ipa.IPAConfig) {
+	const numRandKeyValues = 50_000
+	fmt.Printf("Building tree with %d random key-values\n", numRandKeyValues)
+	keyValues, tree := genRandomTree(rand.New(rand.NewSource(42)), numRandKeyValues)
+	tree.Commit()
+
+	for _, numKeyValues := range []int{1, 1000, 2000, 4000, 8000, 16000} {
+		runtime.GC()
+		// TODO: rounds
+
+		fmt.Printf("For %d random-key values of the tree:\n", numKeyValues)
+		keyvals := map[string][]byte{}
+		keys := make([][]byte, 0, numKeyValues)
+		for i, kv := range keyValues {
+			if i == numKeyValues {
+				break
+			}
+			keys = append(keys, kv.key)
+			keyvals[string(kv.key)] = kv.value
+		}
+		start := time.Now()
+		proof, _, _, _, err := verkle.MakeVerkleMultiProof(tree, keys, keyvals)
+		if err != nil {
+			panic("failed to generate proof")
+		}
+		fmt.Printf("\tGenerating proof took %dms\n", time.Since(start).Milliseconds())
+
+		start = time.Now()
+		if _, _, err := verkle.SerializeProof(proof); err != nil {
+			panic("failed to serialize proof")
+		}
+		fmt.Printf("\tSerializing proof took %dms\n", time.Since(start).Milliseconds())
+	}
+}
+
+func genRandomTree(rand *rand.Rand, keyValueCount int) ([]keyValue, verkle.VerkleNode) {
+	tree := verkle.New()
+	keyValues := make([]keyValue, 0, keyValueCount)
+	for _, kv := range genRandomKeyValues(rand, keyValueCount) {
+		if err := tree.Insert(kv.key, kv.value, nil); err != nil {
+			panic(fmt.Sprintf("failed to insert key: %v", err))
+		}
+		keyValues = append(keyValues, kv)
+	}
+	return keyValues, tree
+}
+
+type keyValue struct {
+	key   []byte
+	value []byte
+}
+
+func genRandomKeyValues(rand *rand.Rand, count int) []keyValue {
+	// TODO: paralellize
+	ret := make([]keyValue, count)
+	for i := 0; i < count; i++ {
+		keyval := make([]byte, 64)
+		rand.Read(keyval)
+		ret[i].key = keyval[:32]
+		ret[i].value = keyval[32:]
+	}
+	return ret
 }
 
 func generateNRandomPolysEvals(conf *ipa.IPAConfig, n int) ([]*banderwagon.Element, [][]fr.Element, []uint8) {
