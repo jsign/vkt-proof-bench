@@ -35,31 +35,31 @@ func main() {
 }
 
 func benchProvingAndVerification(conf *ipa.IPAConfig) {
-	provingMilestoneNames := []string{
+	provingStepNames := []string{
 		"Generate challenge r and powers ",
 		"Calculate t, g(x) and D         ",
 		"Calculate h(x) and E            ",
 		"Calculate (h-g)(x) and E-D      ",
 		"IPA for (h-g)(x) and E-D on t   ",
 	}
-	provingNumMilestones := len(provingMilestoneNames)
-	verificationMilestoneNames := []string{
+	provingNumSteps := len(provingStepNames)
+	verificationStepNames := []string{
 		"Generate challenge r and powers                       ",
 		"Calculating helper_scalars r^i/(t-z_i)                ",
 		"g_2(t) = SUM y_i*(r^i/(t-z_i))=SUM y_i*helper_scalars ",
 		"Compute E                                             ",
 		"Compute E-D and verify IPA                            ",
 	}
-	verificationNumMilestones := len(verificationMilestoneNames)
+	verificationNumSteps := len(verificationStepNames)
 
 	for _, numPolynomials := range []int{1, 1000, 2000, 4000, 8000, 16000} {
 		var proofAggrSerialization time.Duration
 		var provingAggrTotalTime time.Duration
-		provingAggrMilestoneDuration := make([]time.Duration, provingNumMilestones)
+		provingAggrStepDuration := make([]time.Duration, provingNumSteps)
 
 		var proofAggrDeserialization time.Duration
 		var verificationAggrTotalTime time.Duration
-		verificationAggrMilestoneDuration := make([]time.Duration, verificationNumMilestones)
+		verificationAggrStepDuration := make([]time.Duration, verificationNumSteps)
 
 		for i := 0; i < numRounds; i++ {
 			runtime.GC()
@@ -71,11 +71,11 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 			transcriptProving := common.NewTranscript("bench")
 			proof := multiproof.CreateMultiProof(transcriptProving, conf, cs, fs, zs)
 			timestamps := transcriptProving.GetTimestamps()
-			if len(timestamps) != provingNumMilestones+1 {
+			if len(timestamps) != provingNumSteps+1 {
 				panic("wrong number of timestamps")
 			}
 			for k := 1; k < len(timestamps); k++ {
-				provingAggrMilestoneDuration[k-1] += timestamps[k].Sub(timestamps[k-1])
+				provingAggrStepDuration[k-1] += timestamps[k].Sub(timestamps[k-1])
 			}
 			provingAggrTotalTime += timestamps[len(timestamps)-1].Sub(timestamps[0])
 
@@ -89,11 +89,11 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 				panic("verification failed")
 			}
 			timestamps = transcriptVerification.GetTimestamps()
-			if len(timestamps) != verificationNumMilestones+1 {
+			if len(timestamps) != verificationNumSteps+1 {
 				panic("wrong number of timestamps")
 			}
 			for k := 1; k < len(timestamps); k++ {
-				verificationAggrMilestoneDuration[k-1] += timestamps[k].Sub(timestamps[k-1])
+				verificationAggrStepDuration[k-1] += timestamps[k].Sub(timestamps[k-1])
 			}
 			verificationAggrTotalTime += timestamps[len(timestamps)-1].Sub(timestamps[0])
 			var buf bytes.Buffer
@@ -108,16 +108,16 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 		fmt.Printf("\tProving:\n")
 		fmt.Printf("\t\tProof serialization duration: %.02fms\n", float64((proofAggrSerialization/time.Duration(numRounds)).Microseconds())/1000)
 		fmt.Printf("\t\tProof creation duration: %dms\n", (provingAggrTotalTime / time.Duration(numRounds)).Milliseconds())
-		fmt.Printf("\tDuration per milestone:\n")
-		for i := 0; i < provingNumMilestones; i++ {
-			fmt.Printf("\t\t\t%s: %.02fms\n", provingMilestoneNames[i], float64((provingAggrMilestoneDuration[i]/time.Duration(numRounds)).Microseconds())/1000)
+		fmt.Printf("\t\tDuration per step:\n")
+		for i := 0; i < provingNumSteps; i++ {
+			fmt.Printf("\t\t\t%s: %.02fms\n", provingStepNames[i], float64((provingAggrStepDuration[i]/time.Duration(numRounds)).Microseconds())/1000)
 		}
 		fmt.Printf("\tVerification:\n")
 		fmt.Printf("\t\tProof deserialization duration: %.02fms\n", float64((proofAggrSerialization/time.Duration(numRounds)).Microseconds())/1000)
 		fmt.Printf("\t\tTotal duration: %dms\n", (verificationAggrTotalTime / time.Duration(numRounds)).Milliseconds())
-		fmt.Printf("\t\tTime per milestone:\n")
-		for i := 0; i < verificationNumMilestones; i++ {
-			fmt.Printf("\t\t\t%s: %.02fms\n", verificationMilestoneNames[i], float64((verificationAggrMilestoneDuration[i]/time.Duration(numRounds)).Microseconds())/1000)
+		fmt.Printf("\t\tDuration per step:\n")
+		for i := 0; i < verificationNumSteps; i++ {
+			fmt.Printf("\t\t\t%s: %.02fms\n", verificationStepNames[i], float64((verificationAggrStepDuration[i]/time.Duration(numRounds)).Microseconds())/1000)
 		}
 		fmt.Println()
 	}
@@ -135,6 +135,8 @@ func benchVKTProof(conf *ipa.IPAConfig) {
 		var aggrProofGenTime time.Duration
 		var aggrSerializationTime time.Duration
 		var aggrDeserializationTime time.Duration
+		verkle.BenchCollectPolynomialsDuration = 0
+		verkle.BenchNumPolynomials = 0
 		for i := 0; i < numRounds; i++ {
 			keyvals := map[string][]byte{}
 			keys := make([][]byte, 0, numKeyValues)
@@ -167,7 +169,10 @@ func benchVKTProof(conf *ipa.IPAConfig) {
 
 		}
 		fmt.Printf("For %d random-key values of the tree:\n", numKeyValues)
-		fmt.Printf("\tGenerating proof took %dms\n", (aggrProofGenTime / time.Duration(numRounds)).Milliseconds())
+		fmt.Printf("\tGenerating proof took %dms:\n", (aggrProofGenTime / time.Duration(numRounds)).Milliseconds())
+		fmt.Printf("\t\tCollected %d polynomials\n", verkle.BenchNumPolynomials/numRounds)
+		fmt.Printf("\t\tCollecting those polys (comm, evals, etc) took %dms\n", (verkle.BenchCollectPolynomialsDuration / time.Duration(numRounds)).Milliseconds())
+		fmt.Printf("\t\tThe rest (Multiproof + nits) took %dms\n", ((aggrProofGenTime - verkle.BenchCollectPolynomialsDuration) / time.Duration(numRounds)).Milliseconds())
 		fmt.Printf("\tSerializing proof took %dms\n", (aggrSerializationTime / time.Duration(numRounds)).Milliseconds())
 		fmt.Printf("\tDeserializing proof took %dms\n", (aggrDeserializationTime / time.Duration(numRounds)).Milliseconds())
 		fmt.Println()
