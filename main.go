@@ -30,7 +30,7 @@ func main() {
 	fmt.Printf("##### VKT proof benchmark #####\n")
 	benchVKTProof(conf)
 
-	fmt.Printf("\n##### Multiproof benchmark #####\n")
+	fmt.Printf("\n##### Raw polynomials multiproof benchmark #####\n")
 	benchProvingAndVerification(conf)
 }
 
@@ -125,13 +125,12 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 
 func benchVKTProof(conf *ipa.IPAConfig) {
 	const numRandKeyValues = 50_000
-	fmt.Printf("Building tree with %d random key-values...\n", numRandKeyValues)
+	fmt.Printf("Setup: tree with %d random key-values...\n\n", numRandKeyValues)
 	keyValues, tree := genRandomTree(rand.New(rand.NewSource(42)), numRandKeyValues)
 	tree.Commit()
 
 	for _, numKeyValues := range []int{1, 1000, 2000, 4000, 8000, 16000} {
 		runtime.GC()
-		// TODO: rounds
 
 		var aggrProofGenTime time.Duration
 		var aggrSerializationTime time.Duration
