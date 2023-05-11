@@ -27,11 +27,11 @@ const (
 func main() {
 	conf := genOrLoadConfig("precomp")
 
-	// fmt.Printf("*** Multiproof benchmark ***\n")
-	// benchProvingAndVerification(conf)
-
-	fmt.Printf("*** VKT proof benchmark ***\n")
+	fmt.Printf("##### VKT proof benchmark #####\n")
 	benchVKTProof(conf)
+
+	fmt.Printf("\n##### Multiproof benchmark #####\n")
+	benchProvingAndVerification(conf)
 }
 
 func benchProvingAndVerification(conf *ipa.IPAConfig) {
@@ -106,16 +106,16 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 		}
 		fmt.Printf("For %d polynomials:\n", numPolynomials)
 		fmt.Printf("\tProving:\n")
-		fmt.Printf("\t\tAvg. proof serialization duration: %.02fms\n", float64((proofAggrSerialization/time.Duration(numRounds)).Microseconds())/1000)
-		fmt.Printf("\t\tAvg. proof creation duration: %dms\n", (provingAggrTotalTime / time.Duration(numRounds)).Milliseconds())
-		fmt.Printf("\t\tAvg. time per milestone:\n")
+		fmt.Printf("\t\tProof serialization duration: %.02fms\n", float64((proofAggrSerialization/time.Duration(numRounds)).Microseconds())/1000)
+		fmt.Printf("\t\tProof creation duration: %dms\n", (provingAggrTotalTime / time.Duration(numRounds)).Milliseconds())
+		fmt.Printf("\tDuration per milestone:\n")
 		for i := 0; i < provingNumMilestones; i++ {
 			fmt.Printf("\t\t\t%s: %.02fms\n", provingMilestoneNames[i], float64((provingAggrMilestoneDuration[i]/time.Duration(numRounds)).Microseconds())/1000)
 		}
 		fmt.Printf("\tVerification:\n")
-		fmt.Printf("\t\tAvg. proof deserialization duration: %.02fms\n", float64((proofAggrSerialization/time.Duration(numRounds)).Microseconds())/1000)
-		fmt.Printf("\t\tAvg. total duration: %dms\n", (verificationAggrTotalTime / time.Duration(numRounds)).Milliseconds())
-		fmt.Printf("\t\tAvg. time per milestone:\n")
+		fmt.Printf("\t\tProof deserialization duration: %.02fms\n", float64((proofAggrSerialization/time.Duration(numRounds)).Microseconds())/1000)
+		fmt.Printf("\t\tTotal duration: %dms\n", (verificationAggrTotalTime / time.Duration(numRounds)).Milliseconds())
+		fmt.Printf("\t\tTime per milestone:\n")
 		for i := 0; i < verificationNumMilestones; i++ {
 			fmt.Printf("\t\t\t%s: %.02fms\n", verificationMilestoneNames[i], float64((verificationAggrMilestoneDuration[i]/time.Duration(numRounds)).Microseconds())/1000)
 		}
@@ -125,7 +125,7 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 
 func benchVKTProof(conf *ipa.IPAConfig) {
 	const numRandKeyValues = 50_000
-	fmt.Printf("Building tree with %d random key-values\n", numRandKeyValues)
+	fmt.Printf("Building tree with %d random key-values...\n", numRandKeyValues)
 	keyValues, tree := genRandomTree(rand.New(rand.NewSource(42)), numRandKeyValues)
 	tree.Commit()
 
@@ -133,28 +133,45 @@ func benchVKTProof(conf *ipa.IPAConfig) {
 		runtime.GC()
 		// TODO: rounds
 
-		fmt.Printf("For %d random-key values of the tree:\n", numKeyValues)
-		keyvals := map[string][]byte{}
-		keys := make([][]byte, 0, numKeyValues)
-		for i, kv := range keyValues {
-			if i == numKeyValues {
-				break
+		var aggrProofGenTime time.Duration
+		var aggrSerializationTime time.Duration
+		var aggrDeserializationTime time.Duration
+		for i := 0; i < numRounds; i++ {
+			keyvals := map[string][]byte{}
+			keys := make([][]byte, 0, numKeyValues)
+			for i, kv := range keyValues {
+				if i == numKeyValues {
+					break
+				}
+				keys = append(keys, kv.key)
+				keyvals[string(kv.key)] = kv.value
 			}
-			keys = append(keys, kv.key)
-			keyvals[string(kv.key)] = kv.value
-		}
-		start := time.Now()
-		proof, _, _, _, err := verkle.MakeVerkleMultiProof(tree, keys, keyvals)
-		if err != nil {
-			panic("failed to generate proof")
-		}
-		fmt.Printf("\tGenerating proof took %dms\n", time.Since(start).Milliseconds())
+			start := time.Now()
+			proof, _, _, _, err := verkle.MakeVerkleMultiProof(tree, keys, keyvals)
+			if err != nil {
+				panic("failed to generate proof")
+			}
+			aggrProofGenTime += time.Since(start)
 
-		start = time.Now()
-		if _, _, err := verkle.SerializeProof(proof); err != nil {
-			panic("failed to serialize proof")
+			start = time.Now()
+			serProof, serStateDiff, err := verkle.SerializeProof(proof)
+			if err != nil {
+				panic("failed to serialize proof")
+			}
+			aggrSerializationTime += time.Since(start)
+
+			start = time.Now()
+			if _, err := verkle.DeserializeProof(serProof, serStateDiff); err != nil {
+				panic("failed to deserialize proof")
+			}
+			aggrDeserializationTime += time.Since(start)
+
 		}
-		fmt.Printf("\tSerializing proof took %dms\n", time.Since(start).Milliseconds())
+		fmt.Printf("For %d random-key values of the tree:\n", numKeyValues)
+		fmt.Printf("\tGenerating proof took %dms\n", (aggrProofGenTime / time.Duration(numRounds)).Milliseconds())
+		fmt.Printf("\tSerializing proof took %dms\n", (aggrSerializationTime / time.Duration(numRounds)).Milliseconds())
+		fmt.Printf("\tDeserializing proof took %dms\n", (aggrDeserializationTime / time.Duration(numRounds)).Milliseconds())
+		fmt.Println()
 	}
 }
 
