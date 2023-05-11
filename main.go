@@ -124,7 +124,7 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 }
 
 func benchVKTProof(conf *ipa.IPAConfig) {
-	const numRandKeyValues = 50_000
+	const numRandKeyValues = 1_000_000
 	fmt.Printf("Setup: tree with %d random key-values...\n\n", numRandKeyValues)
 	keyValues, tree := genRandomTree(rand.New(rand.NewSource(42)), numRandKeyValues)
 	tree.Commit()
@@ -192,7 +192,6 @@ type keyValue struct {
 }
 
 func genRandomKeyValues(rand *rand.Rand, count int) []keyValue {
-	// TODO: paralellize
 	ret := make([]keyValue, count)
 	for i := 0; i < count; i++ {
 		keyval := make([]byte, 64)
