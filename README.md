@@ -10,154 +10,172 @@ $ go run main.go
 Setup: tree with 1000000 random key-values...
 
 For 1 random-key values of the tree:
-        Generating proof took 52ms
+        Generating proof took 53ms:
+                Collected 8 polynomials evaluations to prove
+                Collecting those polys evals (comm, evals, etc) took 0ms
+                The rest (Multiproof + nits) took 53ms
         Serializing proof took 0ms
         Deserializing proof took 0ms
 
 For 1000 random-key values of the tree:
-        Generating proof took 426ms
+        Generating proof took 435ms:
+                Collected 7307 polynomials evaluations to prove
+                Collecting those polys evals (comm, evals, etc) took 106ms
+                The rest (Multiproof + nits) took 328ms
         Serializing proof took 12ms
         Deserializing proof took 24ms
 
 For 2000 random-key values of the tree:
-        Generating proof took 753ms
-        Serializing proof took 19ms
-        Deserializing proof took 46ms
+        Generating proof took 786ms:
+                Collected 14352 polynomials evaluations to prove
+                Collecting those polys evals (comm, evals, etc) took 191ms
+                The rest (Multiproof + nits) took 594ms
+        Serializing proof took 18ms
+        Deserializing proof took 47ms
 
 For 4000 random-key values of the tree:
-        Generating proof took 1449ms
-        Serializing proof took 32ms
-        Deserializing proof took 90ms
+        Generating proof took 1506ms:
+                Collected 28377 polynomials evaluations to prove
+                Collecting those polys evals (comm, evals, etc) took 364ms
+                The rest (Multiproof + nits) took 1142ms
+        Serializing proof took 33ms
+        Deserializing proof took 93ms
 
 For 8000 random-key values of the tree:
-        Generating proof took 2941ms
-        Serializing proof took 63ms
-        Deserializing proof took 189ms
+        Generating proof took 2922ms:
+                Collected 56284 polynomials evaluations to prove
+                Collecting those polys evals (comm, evals, etc) took 697ms
+                The rest (Multiproof + nits) took 2224ms
+        Serializing proof took 59ms
+        Deserializing proof took 183ms
 
 For 16000 random-key values of the tree:
-        Generating proof took 10679ms
-        Serializing proof took 135ms
-        Deserializing proof took 388ms
+        Generating proof took 11385ms:
+                Collected 111399 polynomials evaluations to prove
+                Collecting those polys evals (comm, evals, etc) took 4456ms
+                The rest (Multiproof + nits) took 6929ms
+        Serializing proof took 152ms
+        Deserializing proof took 410ms
 
 
 ##### Raw polynomials multiproof benchmark #####
 For 1 polynomials:
         Proving:
                 Proof serialization duration: 0.05ms
-                Proof creation duration: 173ms
-        Duration per milestone:
+                Proof creation duration: 174ms
+                Duration per step:
                         Generate challenge r and powers : 0.02ms
-                        Calculate t, g(x) and D         : 69.26ms
-                        Calculate h(x) and E            : 56.75ms
+                        Calculate t, g(x) and D         : 71.38ms
+                        Calculate h(x) and E            : 55.64ms
                         Calculate (h-g)(x) and E-D      : 0.01ms
-                        IPA for (h-g)(x) and E-D on t   : 47.21ms
+                        IPA for (h-g)(x) and E-D on t   : 47.01ms
         Verification:
                 Proof deserialization duration: 0.05ms
                 Total duration: 28ms
-                Time per milestone:
+                Duration per step:
                         Generate challenge r and powers                       : 0.01ms
                         Calculating helper_scalars r^i/(t-z_i)                : 0.02ms
                         g_2(t) = SUM y_i*(r^i/(t-z_i))=SUM y_i*helper_scalars : 0.00ms
                         Compute E                                             : 0.15ms
-                        Compute E-D and verify IPA                            : 27.99ms
+                        Compute E-D and verify IPA                            : 27.85ms
 
 For 1000 polynomials:
         Proving:
                 Proof serialization duration: 0.05ms
-                Proof creation duration: 90ms
-        Duration per milestone:
-                        Generate challenge r and powers : 3.21ms
-                        Calculate t, g(x) and D         : 26.18ms
-                        Calculate h(x) and E            : 16.51ms
+                Proof creation duration: 89ms
+                Duration per step:
+                        Generate challenge r and powers : 3.35ms
+                        Calculate t, g(x) and D         : 25.63ms
+                        Calculate h(x) and E            : 16.33ms
                         Calculate (h-g)(x) and E-D      : 0.01ms
-                        IPA for (h-g)(x) and E-D on t   : 44.71ms
+                        IPA for (h-g)(x) and E-D on t   : 44.62ms
         Verification:
                 Proof deserialization duration: 0.05ms
-                Total duration: 108ms
-                Time per milestone:
-                        Generate challenge r and powers                       : 5.75ms
-                        Calculating helper_scalars r^i/(t-z_i)                : 6.45ms
-                        g_2(t) = SUM y_i*(r^i/(t-z_i))=SUM y_i*helper_scalars : 0.04ms
-                        Compute E                                             : 68.80ms
-                        Compute E-D and verify IPA                            : 27.38ms
+                Total duration: 106ms
+                Duration per step:
+                        Generate challenge r and powers                       : 5.70ms
+                        Calculating helper_scalars r^i/(t-z_i)                : 6.29ms
+                        g_2(t) = SUM y_i*(r^i/(t-z_i))=SUM y_i*helper_scalars : 0.03ms
+                        Compute E                                             : 66.43ms
+                        Compute E-D and verify IPA                            : 27.62ms
 
 For 2000 polynomials:
         Proving:
                 Proof serialization duration: 0.05ms
-                Proof creation duration: 130ms
-        Duration per milestone:
-                        Generate challenge r and powers : 6.87ms
-                        Calculate t, g(x) and D         : 48.03ms
-                        Calculate h(x) and E            : 30.11ms
+                Proof creation duration: 127ms
+                Duration per step:
+                        Generate challenge r and powers : 6.03ms
+                        Calculate t, g(x) and D         : 47.41ms
+                        Calculate h(x) and E            : 29.88ms
                         Calculate (h-g)(x) and E-D      : 0.01ms
-                        IPA for (h-g)(x) and E-D on t   : 45.08ms
+                        IPA for (h-g)(x) and E-D on t   : 44.62ms
         Verification:
                 Proof deserialization duration: 0.05ms
                 Total duration: 180ms
-                Time per milestone:
-                        Generate challenge r and powers                       : 9.93ms
-                        Calculating helper_scalars r^i/(t-z_i)                : 10.05ms
+                Duration per step:
+                        Generate challenge r and powers                       : 10.35ms
+                        Calculating helper_scalars r^i/(t-z_i)                : 9.69ms
                         g_2(t) = SUM y_i*(r^i/(t-z_i))=SUM y_i*helper_scalars : 0.07ms
-                        Compute E                                             : 133.47ms
-                        Compute E-D and verify IPA                            : 26.71ms
+                        Compute E                                             : 134.13ms
+                        Compute E-D and verify IPA                            : 25.96ms
 
 For 4000 polynomials:
         Proving:
                 Proof serialization duration: 0.05ms
-                Proof creation duration: 209ms
-        Duration per milestone:
-                        Generate challenge r and powers : 12.03ms
-                        Calculate t, g(x) and D         : 94.38ms
-                        Calculate h(x) and E            : 58.54ms
+                Proof creation duration: 205ms
+                Duration per step:
+                        Generate challenge r and powers : 11.79ms
+                        Calculate t, g(x) and D         : 93.04ms
+                        Calculate h(x) and E            : 56.08ms
                         Calculate (h-g)(x) and E-D      : 0.01ms
-                        IPA for (h-g)(x) and E-D on t   : 45.02ms
+                        IPA for (h-g)(x) and E-D on t   : 44.61ms
         Verification:
                 Proof deserialization duration: 0.05ms
-                Total duration: 334ms
-                Time per milestone:
-                        Generate challenge r and powers                       : 17.05ms
-                        Calculating helper_scalars r^i/(t-z_i)                : 18.12ms
-                        g_2(t) = SUM y_i*(r^i/(t-z_i))=SUM y_i*helper_scalars : 0.27ms
-                        Compute E                                             : 272.06ms
-                        Compute E-D and verify IPA                            : 26.87ms
+                Total duration: 328ms
+                Duration per step:
+                        Generate challenge r and powers                       : 16.56ms
+                        Calculating helper_scalars r^i/(t-z_i)                : 17.07ms
+                        g_2(t) = SUM y_i*(r^i/(t-z_i))=SUM y_i*helper_scalars : 0.12ms
+                        Compute E                                             : 267.59ms
+                        Compute E-D and verify IPA                            : 26.81ms
 
 For 8000 polynomials:
         Proving:
                 Proof serialization duration: 0.05ms
-                Proof creation duration: 366ms
-        Duration per milestone:
-                        Generate challenge r and powers : 23.94ms
-                        Calculate t, g(x) and D         : 184.90ms
-                        Calculate h(x) and E            : 112.81ms
+                Proof creation duration: 365ms
+                Duration per step:
+                        Generate challenge r and powers : 24.23ms
+                        Calculate t, g(x) and D         : 185.18ms
+                        Calculate h(x) and E            : 111.77ms
                         Calculate (h-g)(x) and E-D      : 0.01ms
-                        IPA for (h-g)(x) and E-D on t   : 44.43ms
+                        IPA for (h-g)(x) and E-D on t   : 44.38ms
         Verification:
                 Proof deserialization duration: 0.05ms
-                Total duration: 629ms
-                Time per milestone:
-                        Generate challenge r and powers                       : 28.66ms
-                        Calculating helper_scalars r^i/(t-z_i)                : 34.21ms
-                        g_2(t) = SUM y_i*(r^i/(t-z_i))=SUM y_i*helper_scalars : 0.55ms
-                        Compute E                                             : 539.79ms
-                        Compute E-D and verify IPA                            : 26.21ms
+                Total duration: 644ms
+                Duration per step:
+                        Generate challenge r and powers                       : 29.68ms
+                        Calculating helper_scalars r^i/(t-z_i)                : 35.04ms
+                        g_2(t) = SUM y_i*(r^i/(t-z_i))=SUM y_i*helper_scalars : 0.71ms
+                        Compute E                                             : 552.71ms
+                        Compute E-D and verify IPA                            : 26.42ms
 
 For 16000 polynomials:
         Proving:
                 Proof serialization duration: 0.05ms
-                Proof creation duration: 675ms
-        Duration per milestone:
-                        Generate challenge r and powers : 48.25ms
-                        Calculate t, g(x) and D         : 362.54ms
-                        Calculate h(x) and E            : 219.71ms
+                Proof creation duration: 676ms
+                Duration per step:
+                        Generate challenge r and powers : 47.89ms
+                        Calculate t, g(x) and D         : 366.09ms
+                        Calculate h(x) and E            : 217.84ms
                         Calculate (h-g)(x) and E-D      : 0.01ms
-                        IPA for (h-g)(x) and E-D on t   : 44.57ms
+                        IPA for (h-g)(x) and E-D on t   : 44.84ms
         Verification:
                 Proof deserialization duration: 0.05ms
-                Total duration: 1214ms
-                Time per milestone:
-                        Generate challenge r and powers                       : 51.33ms
-                        Calculating helper_scalars r^i/(t-z_i)                : 68.23ms
-                        g_2(t) = SUM y_i*(r^i/(t-z_i))=SUM y_i*helper_scalars : 1.28ms
-                        Compute E                                             : 1067.57ms
-                        Compute E-D and verify IPA                            : 25.77ms
+                Total duration: 1215ms
+                Duration per step:
+                        Generate challenge r and powers                       : 52.49ms
+                        Calculating helper_scalars r^i/(t-z_i)                : 68.15ms
+                        g_2(t) = SUM y_i*(r^i/(t-z_i))=SUM y_i*helper_scalars : 1.04ms
+                        Compute E                                             : 1067.29ms
+                        Compute E-D and verify IPA                            : 26.74ms
 ```

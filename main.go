@@ -170,8 +170,8 @@ func benchVKTProof(conf *ipa.IPAConfig) {
 		}
 		fmt.Printf("For %d random-key values of the tree:\n", numKeyValues)
 		fmt.Printf("\tGenerating proof took %dms:\n", (aggrProofGenTime / time.Duration(numRounds)).Milliseconds())
-		fmt.Printf("\t\tCollected %d polynomials\n", verkle.BenchNumPolynomials/numRounds)
-		fmt.Printf("\t\tCollecting those polys (comm, evals, etc) took %dms\n", (verkle.BenchCollectPolynomialsDuration / time.Duration(numRounds)).Milliseconds())
+		fmt.Printf("\t\tCollected %d polynomials evaluations to prove\n", verkle.BenchNumPolynomials/numRounds)
+		fmt.Printf("\t\tCollecting those polys evals (comm, evals, etc) took %dms\n", (verkle.BenchCollectPolynomialsDuration / time.Duration(numRounds)).Milliseconds())
 		fmt.Printf("\t\tThe rest (Multiproof + nits) took %dms\n", ((aggrProofGenTime - verkle.BenchCollectPolynomialsDuration) / time.Duration(numRounds)).Milliseconds())
 		fmt.Printf("\tSerializing proof took %dms\n", (aggrSerializationTime / time.Duration(numRounds)).Milliseconds())
 		fmt.Printf("\tDeserializing proof took %dms\n", (aggrDeserializationTime / time.Duration(numRounds)).Milliseconds())
