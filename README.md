@@ -1,6 +1,14 @@
 # vkt-proof-bench
 This repository contains benchmarks to measure the performance of proof generation and verification in Verkle Trees.
 
+## Run
+
+You can run this benchmark by just doing: `go run main.go`.
+
+The first time it runs it may take longer than usual since it will generate the `precomp` file needed for fast MSM 
+required by `go-verkle`. This file is saved and not recomputed in subsequent runs.
+
+
 ## Results 
 The following are the results run on an AMD Ryzen 7 3800XT processor and `go-ipa@ce4a969`.
 
