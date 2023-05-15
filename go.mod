@@ -14,4 +14,6 @@ replace github.com/crate-crypto/go-ipa => github.com/jsign/go-ipa v0.0.0-2023051
 
 //replace github.com/crate-crypto/go-ipa => ../go-ipa
 
-replace github.com/gballet/go-verkle => ../go-verkle
+replace github.com/gballet/go-verkle => github.com/jsign/go-verkle v0.0.0-20230515162510-171d74d383cc
+
+//replace github.com/gballet/go-verkle => ../go-verkle
