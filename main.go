@@ -79,13 +79,28 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 			}
 			provingAggrTotalTime += timestamps[len(timestamps)-1].Sub(timestamps[0])
 
+			var buf bytes.Buffer
+			now := time.Now()
+			proof.Write(&buf)
+			proofAggrSerialization += time.Since(now)
+			now = time.Now()
+			var deserializedProof multiproof.MultiProof
+			deserializedProof.Read(&buf)
+			proofAggrDeserialization += time.Since(now)
+
+			// Normalize Cs since the verifier will receive them in affine form. The verifier won't have
+			// Projective->Affine overhead.
+			for i := range cs {
+				cs[i].Normalise()
+			}
+
 			// Verification.
 			ys := make([]*fr.Element, len(zs))
 			for i, z := range zs {
 				ys[i] = &fs[i][z]
 			}
 			transcriptVerification := common.NewTranscript("bench")
-			if ok := multiproof.CheckMultiProof(transcriptVerification, conf, proof, cs, ys, zs); !ok {
+			if ok := multiproof.CheckMultiProof(transcriptVerification, conf, &deserializedProof, cs, ys, zs); !ok {
 				panic("verification failed")
 			}
 			timestamps = transcriptVerification.GetTimestamps()
@@ -96,13 +111,7 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 				verificationAggrStepDuration[k-1] += timestamps[k].Sub(timestamps[k-1])
 			}
 			verificationAggrTotalTime += timestamps[len(timestamps)-1].Sub(timestamps[0])
-			var buf bytes.Buffer
-			now := time.Now()
-			proof.Write(&buf)
-			proofAggrSerialization += time.Since(now)
-			now = time.Now()
-			proof.Read(&buf)
-			proofAggrDeserialization += time.Since(now)
+
 		}
 		fmt.Printf("For %d polynomials:\n", numPolynomials)
 		fmt.Printf("\tProving:\n")
