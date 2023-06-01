@@ -37,7 +37,7 @@ func BenchmarkTreeProofGeneration(b *testing.B) {
 }
 
 func BenchmarkProofCreation(b *testing.B) {
-	const numPolynomials = 10_000
+	const numPolynomials = 128_000
 	conf := genOrLoadConfig("precomp")
 	cs, fs, zs := generateNRandomPolysEvals(conf, numPolynomials)
 

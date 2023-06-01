@@ -52,7 +52,7 @@ func benchProvingAndVerification(conf *ipa.IPAConfig) {
 	}
 	verificationNumSteps := len(verificationStepNames)
 
-	for _, numPolynomials := range []int{1, 1000, 2000, 4000, 8000, 16000} {
+	for _, numPolynomials := range []int{1, 1000, 2000, 4000, 8000, 16000, 128000} {
 		var proofAggrSerialization time.Duration
 		var provingAggrTotalTime time.Duration
 		provingAggrStepDuration := make([]time.Duration, provingNumSteps)

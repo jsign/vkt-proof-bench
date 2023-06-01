@@ -1,5 +1,5 @@
-github.com/jsign/go-ipa v0.0.0-20230515134231-b3476889b67b h1:aiaGOAeNM2WxU/2s5aaHyujAc04doqa+H9v8MWNyOfA=
-github.com/jsign/go-ipa v0.0.0-20230515134231-b3476889b67b/go.mod h1:gzbVz57IDJgQ9rLQwfSk696JGWof8ftznEL9GoAv3NI=
+github.com/crate-crypto/go-ipa v0.0.0-20230601143733-1eef4aed89d9 h1:5Lk98+0e79IASk1/k1hsF4w6kt2WY5Vf1NocUMTyBLA=
+github.com/crate-crypto/go-ipa v0.0.0-20230601143733-1eef4aed89d9/go.mod h1:gzbVz57IDJgQ9rLQwfSk696JGWof8ftznEL9GoAv3NI=
 github.com/jsign/go-verkle v0.0.0-20230515162510-171d74d383cc h1:tIO4V1G5J/NIuXVFC1rm4Lilz/GW2UpDvredtv6Bt9o=
 github.com/jsign/go-verkle v0.0.0-20230515162510-171d74d383cc/go.mod h1:P3bwGrLhsUNIsUDlq2yzMPvO1c/15oiB3JS85P+hNfw=
 github.com/leanovate/gopter v0.2.9 h1:fQjYxZaynp97ozCzfOyOuAGOU4aU/z37zf/tOujFk7c=
@@ -7,5 +7,5 @@ github.com/leanovate/gopter v0.2.9/go.mod h1:U2L/78B+KVFIx2VmW6onHJQzXtFb+p5y3y2
 golang.org/x/sync v0.1.0 h1:wsuoTGHzEhffawBOhz5CYhcrV4IdKZbEyZjBMuTp12o=
 golang.org/x/sync v0.1.0/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sys v0.0.0-20211020174200-9d6173849985/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8 h1:h+EGohizhe9XlX18rfpa8k8RAc5XyaeamM+0VHRd4lc=
-golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.2.0 h1:ljd4t30dBnAvMZaQCevtY0xLLD0A+bRZXbgLMLU1F/A=
+golang.org/x/sys v0.2.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
